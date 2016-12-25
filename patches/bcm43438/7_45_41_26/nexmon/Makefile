@@ -27,11 +27,11 @@ init: FORCE
 	$(Q)mkdir -p obj gen log
 
 brcmfmac.ko: check-nexmon-setup-env
-ifeq ($(shell uname -m),armv7l)
 	@printf "\033[0;31m  BUILDING DRIVER \033[0m brcmfmac/brcmfmac.ko (details: log/driver.log)\n" $@
+ifeq ($(shell uname -m),armv7l)
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac -j2 >log/driver.log
 else
-	$(warning Warning: Driver can not be compiled on this platform, execute the make command on a raspberry pi)
+	make -C $(RPI3_KERNEL_PATH) M=$$PWD/brcmfmac -j2 >log/driver.log
 endif
 
 obj/%.o: src/%.c
@@ -119,6 +119,11 @@ src/ucode_compressed.c: ucode_compressed.bin
 check-nexmon-setup-env:
 ifndef NEXMON_SETUP_ENV
 	$(error run 'source setup_env.sh' first in the repository\'s root directory)
+endif
+ifneq ($(shell uname -m),armv7l)
+ifndef RPI3_KERNEL_PATH
+    $(error RPI3_KERNEL_PATH is undefined. Clone, compile, and set kernel path before compiling Nexmon patches.)
+endif
 endif
 
 backup-firmware:
