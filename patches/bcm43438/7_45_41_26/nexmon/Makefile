@@ -31,7 +31,7 @@ brcmfmac.ko: check-nexmon-setup-env
 ifeq ($(shell uname -m),armv7l)
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac -j2 >log/driver.log
 else
-	make -C $(RPI3_KERNEL_PATH) M=$$PWD/brcmfmac -j2 >log/driver.log
+	$(Q)make -C $(RPI3_KERNEL_PATH) M=$$PWD/brcmfmac -j2 >log/driver.log
 endif
 
 obj/%.o: src/%.c
@@ -153,7 +153,7 @@ clean: clean-firmware
 ifeq ($(shell uname -m),armv7l)
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac clean
 else
-	make -C $(RPI3_KERNEL_PATH) M=$$PWD/brcmfmac clean
+	$(Q)make -C $(RPI3_KERNEL_PATH) M=$$PWD/brcmfmac clean
 endif
 
 FORCE:
