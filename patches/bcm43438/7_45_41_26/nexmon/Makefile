@@ -149,9 +149,11 @@ clean-firmware: FORCE
 	$(Q)rm -fr $(RAM_FILE) obj gen log src/ucode_compressed.c ucode_compressed.bin
 
 clean: clean-firmware
-ifeq ($(shell uname -m),armv7l)
 	@printf "\033[0;31m  CLEANING DRIVER\033[0m\n" $@
+ifeq ($(shell uname -m),armv7l)
 	$(Q)make -C /lib/modules/$(shell uname -r)/build M=$$PWD/brcmfmac clean
+else
+	make -C $(RPI3_KERNEL_PATH) M=$$PWD/brcmfmac clean
 endif
 
 FORCE:
