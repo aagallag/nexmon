@@ -11,6 +11,7 @@ Before we started to work on this repository, we developed patches for the Nexus
 Our software may damage your hardware and may void your hardware’s warranty! You use our tools at your own risk and responsibility! If you don't like these terms, don't use nexmon!
 
 # Important changes
+* Starting with commit 4f8697743dc46ffc37d87d960825367531baeef9 the brcmfmac driver for the RPi3 can now be used as a regular interface. You need to use nexutil to activate monitor mode (`nexutil -m2` for monitor mode with radiotap headers), which will automtically adjust the interface type.
 * Starting with commit 184480edd6696392aae5f818f305f244606f2d17 you can choose different monitor mode options using nexutil. Use `nexutil -m1` to activate monitor mode without radiotap headers, `nexutil -m2` to activate it with radiotap headers. The numbers were chosen as non-Nexmon firmwares also support native monitor mode without radiotap headers by activating monitor mode with `nexutil -m1`.
 * Starting with commit 1bcfdc95b4395c2e8bdd962791ae20c4ba602f5b we changed the nexutil interface. Instead of calling `nexutil -m true` to activate monitor mode, you should now write `nexutil -m1`. To get the current monitor mode state execute `nexutil -m` instead of `nexutil -n`.
 
@@ -21,7 +22,7 @@ WiFi Chip | Firmware Version | Used in           | Operating System |  M  | RT  
 --------- | ---------------- | ----------------- | ---------------- | --- | --- | --- | --- | --- | ---
 bcm4330   | 5_90_100_41_sta  | Samsung Galaxy S2 | Cyanogenmod 13.0 |  X  |  X  |     |  X  |  X  |  O 
 bcm4339   | 6_37_34_43       | Nexus 5           | Android 6 Stock  |  X  |  X  |  X  |  X  |  X  |  O 
-bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |     |  O 
+bcm43438  | 7_45_41_26       | Raspberry Pi 3    | Raspbian 8       |  X  |  X  |  X  |  X  |  X  |  O 
 bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  |     |  X  |  X  |  O 
 
 ## Legend
@@ -61,7 +62,8 @@ bcm4358   | 7_112_200_17_sta | Nexus 6P          | Android 7 Stock  |  X  |  X  
 * **Important:** Most tools need a Radiotap interface to work properly. *libfakeioctl* emulates this type of interface for you, therefore, use LD_PRELOAD to load this library when you call the favourite tool (e.g. tcpdump or airodump-ng): `LD_PRELOAD=libfakeioctl.so tcpdump -i wlan0`
 
 ### Using nexutil over UDP on Nexus 5
-To be able to communicate with the firmware without root priviledges, we created a UDP interface accessible through the `libnexio`, which is also used by `nexutil`. You first have to prove to the firmware that you generally have root priviledges by setting a securtiy cookie. Then you can use it for UDP based connections:
+To be able to communicate with the firmware without root priviledges, we created a UDP interface accessible through the `libnexio`, which is also used by `nexutil`. You first have to prove to the firmware that you generally have root priviledges by setting a securtiy cookie. Then you can use it for UDP based connections. Your wlan0 interface also needs an IP address in the 192.168.222.0/24 range or you have to change the default nexutil `broadcast-ip`:
+* Set the IP address of the wlan0 interface: `ifconfig wlan0 192.168.222.1 netmask 255.255.255.0`
 * Set the security cookie as root: `nexutil -x<cookie (uint)>`
 * Start a UDP connection for example to activate monitor mode: `nexutil -X<cookie> -m1`
 
@@ -76,12 +78,13 @@ To be able to communicate with the firmware without root priviledges, we created
 * Go to the *patches* folder for the bcm43438 chipset: `cd patches/bcm43438/7_45_41_26/nexmon/`
   * Compile a patched firmware: `make`
   * Generate a backup of your original firmware file: `make backup-firmware`
-  * Install the patched firmware on your smartphone: `make install-firmware`
+  * Install the patched firmware on your RPI3: `make install-firmware`
+* Install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 * *Optional*: remove wpa_supplicant for better control over the WiFi interface: `apt-get remove wpasupplicant`
-* *Optional*: install nexutil: from the root directory of our repository switch to the nexutil folder: `cd utilities/nexutil/`. Compile and install nexutil: `make && make install`.
 
 ### Using the Monitor Mode patch
-* Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`
+* ~~Our modified driver sets the interface in monitor mode as soon as the interface goes up: `ifconfig wlan0 up`~~
+* In the default setting the brcmfmac driver can be used regularly as a WiFi station with out firmware. To activate monitor mode, execute `nexutil -m2`.
 * At this point the monitor mode is active. There is no need to call *airmon-ng*. 
 * The interface already set the Radiotap header, therefore, tools like *tcpdump* or *airodump-ng* can be used out of the box: `tcpdump -i wlan0`
 * **Note:** It is not possible to connect to an access point anymore using our modified driver and firmware, if you whant to go back to the default behaviour you will need to load the original driver and firmware.

@@ -89,12 +89,14 @@ struct wlc_hw_info {
     int sih;                    /* 0x78 */
     int vars;                   /* 0x7C */
     int vars_size;              /* 0x80 */
-    struct d11regs* regs;       /* 0x84 */
-    int physhim;                /* 0x88 */
+    int PAD;                    /* 0x84 */
+    struct d11regs* regs;       /* 0x88 CHECKED */
+//    int physhim;                /* 0x88 */
     int phy_sh;                 /* 0x8C */
-    struct wlc_hwband *band;     /* 0x90 */
-    int PAD[6];                 /* 0x94 */
-    char up;                    /* 0x98 CHECKED */
+    int PAD;                    /* 0x90 */
+    struct wlc_hwband *band;    /* 0x94 CHECKED */
+    int PAD[5];                 /* 0x98 */
+    char up;                    /* 0x98 */
     char PAD;                   /* 0x9a */
     int PAD[19];                /* 0x9c */
     int maccontrol;
@@ -103,18 +105,48 @@ struct wlc_hw_info {
 
 };
 
+#define HNDRTE_DEV_NAME_MAX 16
+
+typedef struct hndrte_dev {
+    char                        name[HNDRTE_DEV_NAME_MAX];
+    struct hndrte_devfuncs      *funcs;
+    uint32                      devid;
+    void                        *softc;     /* Software context */
+    uint32                      flags;      /* RTEDEVFLAG_XXXX */
+    struct hndrte_dev           *next;
+    struct hndrte_dev           *chained;
+    void                        *pdev;
+} hndrte_dev;
+
+struct hndrte_devfuncs {
+    void *(*probe)(struct hndrte_dev *dev, void *regs, uint bus,
+                   uint16 device, uint coreid, uint unit);
+    int (*open)(struct hndrte_dev *dev);
+    int (*close)(struct hndrte_dev *dev);
+    int (*xmit)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*recv)(struct hndrte_dev *src, struct hndrte_dev *dev, void *pkt);
+    int (*ioctl)(struct hndrte_dev *dev, uint32 cmd, void *buffer, int len,
+                 int *used, int *needed, int set);
+    void (*txflowcontrol) (struct hndrte_dev *dev, bool state, int prio);
+    void (*poll)(struct hndrte_dev *dev);
+    int (*xmit_ctl)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb);
+    int (*xmit2)(struct hndrte_dev *src, struct hndrte_dev *dev, void *lb, int8 ch);
+};
+
 /**
  *  Name might be inaccurate
  */
+/*
 struct device {
-    char name[16];
-    void *init_function;
-    int PAD;
-    void *some_device_info;
-    int PAD;
-    int PAD;
-    struct device *bound_device;
+    char name[16];			// 0x000
+    void *init_function;		// 0x010
+    int PAD;				// 0x014
+    void *some_device_info;		// 0x018
+    int PAD;				// 0x01c
+    int PAD;				// 0x020
+    struct device *chained;		// 0x024
 };
+*/
 
 /**
  *  Name might be inaccurate
@@ -124,7 +156,7 @@ struct wl_info {
     void *pub;
     struct wlc_info *wlc;
     struct wlc_hw_info *wlc_hw;
-    struct device *dev;
+    struct hndrte_dev *dev;
 };
 
 /**
@@ -163,7 +195,7 @@ struct wlcband {
 struct wlc_info {
     struct wlc_pub *pub;                /* 0x000 */
     struct osl_info *osh;               /* 0x004 */
-    void *wl;                           /* 0x008 */
+    struct wl_info  *wl;                /* 0x008 */
     volatile struct d11regs *regs;      /* 0x00C */
     struct wlc_hw_info *hw;             /* 0x010 */
     int PAD;                            /* 0x014 */
@@ -292,7 +324,7 @@ struct wlc_info {
     int PAD;                            /* 0x1FC */
     int PAD;                            /* 0x200 */
     int PAD;                            /* 0x204 */
-    int PAD;                            /* 0x208 */
+    int monitor;                        /* 0x208 CHECKED */
     int PAD;                            /* 0x20C */
     int PAD;                            /* 0x210 */
     int PAD;                            /* 0x214 */

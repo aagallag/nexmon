@@ -36,7 +36,6 @@ import android.hardware.SensorManager;
 import android.location.LocationManager;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
-import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Environment;
@@ -81,6 +80,7 @@ public class MyApplication extends Application {
     private static Tracker mTracker;
 
     public static final int SURVEY_NOTIFICATION_ID = 99999;
+    private static SpannableStringBuilder installInfo;
 
     /**
      * Gets the default {@link Tracker} for this {@link Application}.
@@ -145,6 +145,15 @@ public class MyApplication extends Application {
 
     private static boolean isRawproxyreverseAvailable = false;
 
+    private static boolean isNexutilNew = false;
+
+    private static String nexutilVersion;
+
+    private static String rawproxyVersion;
+
+    private static String rawproxyreverseVersion;
+
+
 
 
     private static boolean isBcmFirmwareAvailable = false;
@@ -162,7 +171,6 @@ public class MyApplication extends Application {
 
     private static boolean isNexutilAvailable = false;
 
-    private static boolean isNexutilNew = false;
 
     public static boolean isLibInstalledCorrectly() {
         return isLibInstalledCorrectly;
@@ -260,6 +268,10 @@ public class MyApplication extends Application {
 
     public static boolean isNexutilAvailable() {
         return isNexutilAvailable;
+    }
+
+    public static boolean isNexutilNew() {
+        return isNexutilNew;
     }
 
     public static boolean isNexmonFirmwareAvailable() {
@@ -393,7 +405,6 @@ public class MyApplication extends Application {
         startService(new Intent(getAppContext(), AttackService.class));
         startService(new Intent(getAppContext(), RawSocketReceiveService.class));
 
-       // showSurveyNotification();
     }
 
     public void initLibs() {
@@ -423,6 +434,9 @@ public class MyApplication extends Application {
                 evaluateInstallation();
                 evaluateBCMfirmware();
                 evaluateFirmwareVersion();
+                rawproxyreverseVersion = getVersion("rawproxyreverse");
+                rawproxyVersion = getVersion("rawproxy");
+                nexutilVersion = getVersion("nexutil");
             }
         }).start();
 
@@ -517,6 +531,7 @@ public class MyApplication extends Application {
     public static String getFirmwareVersion() {
         return firmwareVersion;
     }
+    
 
     public static SpannableStringBuilder getInstallInfo() {
         SpannableStringBuilder ssBuilder = new SpannableStringBuilder();
@@ -537,12 +552,11 @@ public class MyApplication extends Application {
         ssBuilder.append("\nTool installation status:\n\n", new StyleSpan(Typeface.BOLD), 0);
 
         if(isNexutilAvailable) {
-            String version = getVersion("nexutil");
-            if (version != null) {
-                if (version.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("nexutil (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+            if (nexutilVersion != null) {
+                if (nexutilVersion.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("nexutil (" + nexutilVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
                 } else {
-                    ssBuilder.append("nexutil (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                    ssBuilder.append("nexutil (" + nexutilVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
                 }
             } else {
                 ssBuilder.append("nexutil (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
@@ -552,12 +566,11 @@ public class MyApplication extends Application {
         }
 
         if(isRawproxyAvailable) {
-            String version = getVersion("rawproxy");
-            if (version != null) {
-                if (version.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("rawproxy (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+            if (rawproxyVersion != null) {
+                if (rawproxyVersion.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("rawproxy (" + rawproxyVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
                 } else {
-                    ssBuilder.append("rawproxy (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                    ssBuilder.append("rawproxy (" + rawproxyVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
                 }
             } else {
                 ssBuilder.append("rawproxy (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
@@ -567,12 +580,11 @@ public class MyApplication extends Application {
         }
 
         if(isRawproxyreverseAvailable) {
-            String version = getVersion("rawproxyreverse");
-            if (version != null) {
-                if (version.equals(BuildConfig.VERSION_NAME)) {
-                    ssBuilder.append("rawproxyreverse (" + version + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
+            if (rawproxyreverseVersion != null) {
+                if (rawproxyreverseVersion.equals(BuildConfig.VERSION_NAME)) {
+                    ssBuilder.append("rawproxyreverse (" + rawproxyreverseVersion + ")\n", new ForegroundColorSpan(Color.GREEN), 0);
                 } else {
-                    ssBuilder.append("rawproxyreverse (" + version + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
+                    ssBuilder.append("rawproxyreverse (" + rawproxyreverseVersion + " => upgrade to app version)\n", new ForegroundColorSpan(Color.YELLOW), 0);
                 }
             } else {
                 ssBuilder.append("rawproxyreverse (outdated => upgrade to app version)\n", new ForegroundColorSpan(Color.RED), 0);
@@ -623,7 +635,7 @@ public class MyApplication extends Application {
         isRawproxyAvailable = isBinaryAvailable("rawproxy");
         isRawproxyreverseAvailable = isBinaryAvailable("rawproxyreverse");
         isNexutilAvailable = isBinaryAvailable("nexutil");
-        isNexutilNew = isNexutilNew();
+        evaluateNexutilVersion();
     }
 
     public static boolean isBinaryAvailable(String binary) {
@@ -645,7 +657,7 @@ public class MyApplication extends Application {
         return isAvailable;
     }
 
-    public static boolean isNexutilNew() {
+    public static void evaluateNexutilVersion() {
         boolean isNew = false;
         String[] cmdline = { "nexutil", "--version"};
         try {
@@ -658,10 +670,11 @@ public class MyApplication extends Application {
                 if(line.contains(BuildConfig.VERSION_NAME))
                     isNew = true;
             }
+            isNexutilNew = isNew;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return isNew;
+
     }
 
     @Nullable
@@ -712,9 +725,6 @@ public class MyApplication extends Application {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(MyApplication.getAppContext());
         boolean showNotification = prefs.getBoolean("switch_survey_notification", true);
         if(showNotification) {
-            //Uri webpage = Uri.parse("http://survey.seemoo.tu-darmstadt.de/limesurvey/index.php/465539?N00=" + nexmonUID);
-
-            //Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
             Intent intent = new Intent(getAppContext(), SurveyNotificationActivity.class);
             PendingIntent pendingIntent = PendingIntent.getActivity(getAppContext(), 99999, intent, 0);
 

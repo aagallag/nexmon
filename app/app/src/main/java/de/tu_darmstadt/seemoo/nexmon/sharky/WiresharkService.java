@@ -32,7 +32,6 @@ import java.util.ArrayList;
 
 import de.tu_darmstadt.seemoo.nexmon.MyApplication;
 import de.tu_darmstadt.seemoo.nexmon.gui.SharkFragment;
-import de.tu_darmstadt.seemoo.nexmon.gui.SharkListElement;
 import de.tu_darmstadt.seemoo.nexmon.net.IFrameReceiver;
 import de.tu_darmstadt.seemoo.nexmon.net.MonitorModeService;
 
@@ -95,6 +94,12 @@ public class WiresharkService extends Service implements IFrameReceiver {
             isCapturing = true;
 
             sendMonitorModeBroadcast(true);
+
+            Tracker tracker = MyApplication.getDefaultTracker();
+            tracker.send(new HitBuilders.EventBuilder()
+                    .setCategory("Wireshark")
+                    .setAction("Live Capturing started")
+                    .build());
         }
     }
 
@@ -124,6 +129,11 @@ public class WiresharkService extends Service implements IFrameReceiver {
                     .setCategory("Runtime")
                     .setVariable("Wireshark")
                     .setValue(System.currentTimeMillis() - startTime)
+                    .build());
+
+            tracker.send(new HitBuilders.EventBuilder()
+                    .setCategory("Wireshark")
+                    .setAction("Live Capturing stopped")
                     .build());
 
             MyApplication.getFrameReceiver().getObserver().removeObserver(this);
