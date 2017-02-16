@@ -3,6 +3,9 @@
 
 #include "types.h"
 
+struct hndrte_timer *
+schedule_work(void *context, void *data, void *mainfn, int ms, int periodic);
+
 void *
 skb_push(sk_buff *p, unsigned int len);
 
@@ -11,6 +14,12 @@ skb_pull(sk_buff *p, unsigned int len);
 
 void
 hexdump(char *desc, void *addr, int len);
+
+unsigned short
+bcm_qdbm_to_mw(unsigned char qdbm);
+
+unsigned char
+bcm_mw_to_qdbm(unsigned short mw);
 
 #define HTONS(A) ((((uint16)(A) & 0xff00) >> 8) | (((uint16)(A) & 0x00ff) << 8))
 
